@@ -19,11 +19,13 @@ import urllib.parse
 
 def edit(txt, extra, context, field, fullname):
     config = mw.addonManager.getConfig(__name__)
-    txt = """<%s contenteditable="true" data-field="%s">%s</%s>""" % (config['tag'], field, txt, config['tag'])
+    card = mw.reviewer.card
+    nid = card.nid if card is not None else ""
+    txt = """<%s contenteditable="true" data-field="%s" data-nid="%s">%s</%s>""" % (config['tag'], field, nid, txt, config['tag'])
     txt += """<script>"""
     txt += """
             $("[contenteditable=true][data-field='%s']").blur(function() {
-                pycmd("ankisave#" + $(this).data("field") + "#" + $(this).html());
+                pycmd("ankisave#" + $(this).data("field") + "#" + $(this).data("nid") + "#" + $(this).html());
             });
         """ % field
     if config['tag'] == "span":
@@ -70,8 +72,15 @@ def saveField(note, fld, val):
 
 def myLinkHandler(reviewer, url):
     if url.startswith("ankisave#"):
-        fld, val = url.replace("ankisave#", "").split("#", 1)
-        note = reviewer.card.note()
+        fld, nid, val = url.replace("ankisave#", "").split("#", 2)
+        if nid == '':
+            return
+        nid = int(nid)
+        card = reviewer.card
+        if card is None or card.note().id != nid:
+            note = mw.col.getNote(nid)
+        else:
+            note = card.note()
         saveField(note, fld, val)
         reviewer.card.q(reload=True)
     elif url.startswith("ankisave!speedfocus#"):
