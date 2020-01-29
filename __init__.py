@@ -14,13 +14,11 @@ from aqt.editor import Editor
 from aqt.reviewer import Reviewer
 from aqt import mw
 
-import base64
 import unicodedata
 import urllib.parse
 
 def edit(txt, extra, context, field, fullname):
     config = mw.addonManager.getConfig(__name__)
-    field = base64.b64encode(field.encode('utf-8')).decode('ascii')
     txt = """<%s contenteditable="true" data-field="%s">%s</%s>""" % (config['tag'], field, txt, config['tag'])
     txt += """<script>"""
     txt += """
@@ -47,7 +45,6 @@ def edit(txt, extra, context, field, fullname):
 addHook('fmod_edit', edit)
 
 def saveField(note, fld, val):
-    fld = base64.b64decode(fld, validate=True).decode('utf-8')
     if fld == "Tags":
         tagsTxt = unicodedata.normalize("NFC", htmlToTextLine(val))
         txt = mw.col.tags.canonify(mw.col.tags.split(tagsTxt))
