@@ -1,0 +1,10 @@
+{
+    "name": "Edit Field During Review (Beta)",
+    "package": "1020366288 (beta)",
+    "ankiweb_id": "1020366288",
+    "author": "kelciour",
+    "homepage": "https://ankiweb.net/shared/info/1020366288",
+    "conflicts": [
+        "1020366288"
+    ]
+}
