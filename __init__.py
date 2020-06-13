@@ -17,32 +17,32 @@ from aqt import mw
 import unicodedata
 import urllib.parse
 
-def edit(txt, extra, context, field, fullname):
+def edit(text, extra, context, field, fullname):
     config = mw.addonManager.getConfig(__name__)
     card = mw.reviewer.card
     nid = card.nid if card is not None else ""
-    txt = """<%s contenteditable="true" data-field="%s" data-nid="%s">%s</%s>""" % (config['tag'], field, nid, txt, config['tag'])
-    txt += """<script>"""
-    txt += """
+    text = """<%s contenteditable="true" data-field="%s" data-nid="%s">%s</%s>""" % (config['tag'], field, nid, text, config['tag'])
+    text += """<script>"""
+    text += """
             $("[contenteditable=true][data-field='%s']").blur(function() {
                 pycmd("ankisave#" + $(this).data("field") + "#" + $(this).data("nid") + "#" + $(this).html());
             });
         """ % field
     if config['tag'] == "span":
-        txt += """
+        text += """
             $("[contenteditable=true][data-field='%s']").keydown(function(evt) {
                 if (evt.keyCode == 8) {
                     evt.stopPropagation();
                 }
             });
         """ % field
-    txt += """
+    text += """
             $("[contenteditable=true][data-field='%s']").focus(function() {
                 pycmd("ankisave!speedfocus#");
             });
         """ % field
-    txt += """</script>"""
-    return txt
+    text += """</script>"""
+    return text
 
 addHook('fmod_edit', edit)
 
