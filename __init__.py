@@ -5,21 +5,26 @@ Anki Add-on: Edit Field During Review
 
 Edit text in a field during review without opening the edit window
 
-Copyright: (c) 2019 Nickolay <kelciour@gmail.com>
+Copyright: (c) 2019-2020 Nickolay Nonard <kelciour@gmail.com>
 """
 
-from anki.hooks import addHook, wrap
+from anki import hooks
+from anki.template import TemplateRenderContext
 from anki.utils import htmlToTextLine
 from aqt.editor import Editor
 from aqt.reviewer import Reviewer
-from aqt import mw
+from aqt import mw, gui_hooks
 
 import unicodedata
 import urllib.parse
 
-def edit(text, extra, context, field, fullname):
+
+def on_edit_filter(text, field, filter, context: TemplateRenderContext):
+    if filter != "edit":
+        return text
+
     config = mw.addonManager.getConfig(__name__)
-    card = mw.reviewer.card
+    card = context.card()
     nid = card.nid if card is not None else ""
     text = """<%s contenteditable="true" data-field="%s" data-nid="%s">%s</%s>""" % (config['tag'], field, nid, text, config['tag'])
     text += """<script>"""
@@ -44,7 +49,7 @@ def edit(text, extra, context, field, fullname):
     text += """</script>"""
     return text
 
-addHook('fmod_edit', edit)
+hooks.field_filter.append(on_edit_filter)
 
 def saveField(note, fld, val):
     if fld == "Tags":
@@ -70,27 +75,26 @@ def saveField(note, fld, val):
         note[fld] = txt
     note.flush()
 
-def myLinkHandler(reviewer, url):
+def on_js_message(handled, url, context):
+    if not isinstance(context, Reviewer):
+        return handled
+
     if url.startswith("ankisave#"):
         fld, nid, val = url.replace("ankisave#", "").split("#", 2)
-        if nid == '':
-            return
         nid = int(nid)
-        card = reviewer.card
-        if card is None or card.note().id != nid:
-            note = mw.col.getNote(nid)
-        else:
-            note = card.note()
+        card = context.card
+        note = card.note()
+        assert nid == note.id
         saveField(note, fld, val)
-        reviewer.card.q(reload=True)
+        card.q(reload=True)
+        return True, None
     elif url.startswith("ankisave!speedfocus#"):
         mw.reviewer.bottom.web.eval("""
             clearTimeout(autoAnswerTimeout);
             clearTimeout(autoAlertTimeout);
             clearTimeout(autoAgainTimeout);
         """)
-    else:
-        origLinkHandler(reviewer, url)
+        return True, None
+    return handled
 
-origLinkHandler = Reviewer._linkHandler
-Reviewer._linkHandler = myLinkHandler
+gui_hooks.webview_did_receive_js_message.append(on_js_message)
