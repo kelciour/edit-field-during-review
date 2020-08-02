@@ -19,6 +19,12 @@ import unicodedata
 import urllib.parse
 
 
+try:
+    from anki.rsbackend import NotFoundError # Anki 2.1.28+
+except:
+    class NotFoundError(Exception):
+        pass
+
 def on_edit_filter(text, field, filter, context: TemplateRenderContext):
     if filter != "edit":
         return text
@@ -84,6 +90,16 @@ def on_js_message(handled, url, context):
         nid = int(nid)
         card = context.card
         note = card.note()
+        try:
+            # make sure note is not deleted
+            mw.col.getNote(card.nid)
+        except NotFoundError:
+            return True, None
+        except TypeError as e:
+            # NotFoundError if Anki < 2.1.28
+            if str(e) == "cannot unpack non-iterable NoneType object":
+                return True, None
+            raise(e)
         assert nid == note.id
         saveField(note, fld, val)
         card.q(reload=True)
