@@ -11,7 +11,6 @@ Copyright: (c) 2019-2020 Nickolay Nonard <kelciour@gmail.com>
 from anki import hooks
 from anki.template import TemplateRenderContext
 from anki.utils import htmlToTextLine
-from aqt.editor import Editor
 from aqt.reviewer import Reviewer
 from aqt import mw, gui_hooks
 
@@ -57,6 +56,9 @@ def on_edit_filter(text, field, filter, context: TemplateRenderContext):
 
 hooks.field_filter.append(on_edit_filter)
 
+def mungeHTML(txt):
+    return "" if txt in ("<br>", "<div><br></div>") else txt
+
 def saveField(note, fld, val):
     if fld == "Tags":
         tagsTxt = unicodedata.normalize("NFC", htmlToTextLine(val))
@@ -66,7 +68,7 @@ def saveField(note, fld, val):
         # https://github.com/dae/anki/blob/47eab46f05c8cc169393c785f4c3f49cf1d7cca8/aqt/editor.py#L257-L263
         txt = urllib.parse.unquote(val)
         txt = unicodedata.normalize("NFC", txt)
-        txt = Editor.mungeHTML(None, txt)
+        txt = mungeHTML(txt)
         txt = txt.replace("\x00", "")
         txt = mw.col.media.escapeImages(txt, unescape=True)
         field = note[fld]
