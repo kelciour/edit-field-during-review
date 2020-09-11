@@ -102,7 +102,7 @@ def on_js_message(handled, url, context):
             if str(e) == "cannot unpack non-iterable NoneType object":
                 return True, None
             raise(e)
-        assert nid == note.id
+        assert nid == note.id, "{} == {}".format(nid, note.id)
         saveField(note, fld, val)
         card.q(reload=True)
         return True, None
