@@ -92,9 +92,12 @@ def on_js_message(handled, url, context):
         nid = int(nid)
         card = context.card
         note = card.note()
+        config = mw.addonManager.getConfig(__name__)
+        if config['debug']:
+            assert nid == note.id, "{} == {}".format(nid, note.id)
         try:
             # make sure note is not deleted
-            mw.col.getNote(card.nid)
+            note2 = mw.col.getNote(nid)
         except NotFoundError:
             return True, None
         except TypeError as e:
@@ -102,7 +105,10 @@ def on_js_message(handled, url, context):
             if str(e) == "cannot unpack non-iterable NoneType object":
                 return True, None
             raise(e)
-        assert nid == note.id, "{} == {}".format(nid, note.id)
+        # we need to reuse context.card.note() if nid == note.id
+        # as changes will be lost once we open the editor window
+        if nid != note.id:
+            note = note2
         saveField(note, fld, val)
         card.q(reload=True)
         return True, None
