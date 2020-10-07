@@ -13,7 +13,9 @@ from anki.template import TemplateRenderContext
 from anki.utils import htmlToTextLine
 from aqt.reviewer import Reviewer
 from aqt import mw, gui_hooks
+from aqt.utils import tooltip
 
+import re
 import unicodedata
 import urllib.parse
 
@@ -24,8 +26,34 @@ except:
     class NotFoundError(Exception):
         pass
 
+# https://github.com/ankitects/anki/blob/2.1.15/anki/template/template.py#L7
+clozeReg = r"(?si)\{\{(c)\d+::(.*?)(::(.*?))?\}\}"
+
+# https://github.com/ankitects/anki/blob/2.1.15/anki/latex.py#L21-L25
+latexRegexps = {
+    "standard": re.compile(r"\[latex\](.+?)\[/latex\]", re.DOTALL | re.IGNORECASE),
+    "expression": re.compile(r"\[\$\](.+?)\[/\$\]", re.DOTALL | re.IGNORECASE),
+    "math": re.compile(r"\[\$\$\](.+?)\[/\$\$\]", re.DOTALL | re.IGNORECASE),
+}
+
+mathJaxReg = r"(?si)(\\[\[\(])(.*?)(\\[\]\)])"
+
+def safe_to_edit(text):
+    if '[sound:' in text:
+        return False
+    if re.search(clozeReg, text):
+        return False
+    if re.search(mathJaxReg, text):
+        return False
+    if any(re.search(regex, text) for regex in latexRegexps.values()):
+        return False
+    return True
+
 def on_edit_filter(text, field, filter, context: TemplateRenderContext):
     if filter != "edit":
+        return text
+
+    if not safe_to_edit(text):
         return text
 
     config = mw.addonManager.getConfig(__name__)
