@@ -26,8 +26,7 @@ except:
     class NotFoundError(Exception):
         pass
 
-# https://github.com/ankitects/anki/blob/2.1.15/anki/template/template.py#L7
-clozeReg = r"(?si)\{\{(c)\d+::(.*?)(::(.*?))?\}\}"
+clozeReg = r'<span class="?cloze'
 
 # https://github.com/ankitects/anki/blob/2.1.15/anki/latex.py#L21-L25
 latexRegexps = {
